@@ -39,7 +39,7 @@ The engine categorizes stories into distinct albums/directories, dynamically fet
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/polaris-vn-engine.git
+   git clone https://github.com/Dasewasia10/aipura-vn.git
    cd polaris-vn-engine
    ```
 

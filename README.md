@@ -41,7 +41,7 @@ The engine categorizes stories into distinct albums/directories, dynamically fet
    ```bash
    git clone [https://github.com/yourusername/polaris-vn-engine.git](https://github.com/yourusername/polaris-vn-engine.git)
    cd polaris-vn-engine
-  ```
+   ```
 
 2.  **Install dependencies:**
 

@@ -254,7 +254,7 @@ const StoryMenu: React.FC = () => {
                     {group.icon ? (
                       <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shrink-0">
                         <img
-                          src={group.icon}
+                          src={getCharacterIconUrl(group.icon)}
                           alt={group.title}
                           className="w-full h-full object-cover"
                         />

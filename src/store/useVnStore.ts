@@ -56,6 +56,7 @@ interface VnState {
   showLog: boolean;
   textSpeed: number;
   activeCategory: string;
+  playerName: string;
 
   // Actions
   currentLine: () => ScriptLine | null;
@@ -72,6 +73,7 @@ interface VnState {
   setTextSpeed: (speed: number) => void;
   exitStory: () => void;
   setActiveCategory: (cat: string) => void;
+  setPlayerName: (name: string) => void;
 }
 
 export const useVnStore = create<VnState>((set, get) => ({
@@ -86,6 +88,8 @@ export const useVnStore = create<VnState>((set, get) => ({
   showLog: false,
   textSpeed: 50,
   activeCategory: "main",
+
+  playerName: localStorage.getItem("vn_player_name") || "Manager",
 
   currentLine: () => {
     const stack = get().executionStack;
@@ -184,7 +188,10 @@ export const useVnStore = create<VnState>((set, get) => ({
   cancelAutoAndSkip: () => set({ isAutoPlay: false, isSkip: false }),
   setTextSpeed: (speed) => set({ textSpeed: speed }),
   setActiveCategory: (cat) => set({ activeCategory: cat }),
-
+  setPlayerName: (name) => {
+    localStorage.setItem("vn_player_name", name);
+    set({ playerName: name });
+  },
   exitStory: () => {
     // Saat keluar, kita bersihkan stack tapi biarkan activeCategory tetap ada
     set({

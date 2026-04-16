@@ -62,6 +62,15 @@ const CATEGORIES = [
   },
 ];
 
+const CHARA_CODE_MAP: Record<string, string> = {
+  rio: "rio", aoi: "aoi", ai: "ai", kkr: "kokoro", rui: "rui", yu: "yu",
+  smr: "sumire", mna: "mana", ktn: "kotono", skr: "path-01", rei: "rei",
+  ngs: "nagisa", hrk: "haruko", ski: "saki", suz: "suzu", mei: "mei",
+  szk: "shizuku", chs: "chisa", chk: "chika", cca: "cocoa", chn: "chino",
+  mhk: "miho", kan: "kana", kor: "fran", mana: "mana", saegusa: "saegusa",
+  asakura: "asakura", koh: "kohei", kohei: "kohei", stm: "satomi",
+};
+
 interface NormalizedGroup {
   id: string;
   title: string;
@@ -69,13 +78,17 @@ interface NormalizedGroup {
   items: any[];
 }
 
-const getCharacterIconUrl = (characterName: string) => {
-  if (!characterName) return null;
-  let assetName = characterName.toLowerCase().replace(/\s+/g, "");
+const getCharacterIconUrl = (code: string) => {
+  if (!code) return null;
+  const lower = code.toLowerCase();
+  
+  // Ambil mapping nama file dari kode
+  let assetName = CHARA_CODE_MAP[lower] || lower;
 
-  if (characterName.toLowerCase() === "snow") {
+  if (assetName === "snow") {
     assetName = "smiku";
   }
+  
   return `https://apiip.dasewasia.my.id/iconCharacter/chara-${assetName}.png`;
 };
 
@@ -112,7 +125,7 @@ const StoryMenu: React.FC = () => {
           // ICON: Gunakan fungsi ikon karakter untuk Bond Story
           let groupIcon = group.groupIcon || null;
           if (activeCategory === "bond") {
-            groupIcon = getCharacterIconUrl(groupTitle);
+            groupIcon = getCharacterIconUrl(group.id);
           }
 
           return {
@@ -174,6 +187,20 @@ const StoryMenu: React.FC = () => {
           <p className="text-[10px] tracking-[0.2em] font-bold text-gray-500 mt-2 uppercase">
             Story Archive
           </p>
+
+          {/* INPUT NAMA MANAGER */}
+          <div className="mt-6">
+            <label className="text-[10px] font-bold text-cyan-500/60 uppercase tracking-widest block mb-2">
+              Manager Name
+            </label>
+            <input
+              type="text"
+              value={useVnStore((s) => s.playerName)}
+              onChange={(e) => useVnStore.getState().setPlayerName(e.target.value)}
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-cyan-100 focus:outline-none focus:border-cyan-500/50 transition-colors"
+              placeholder="Enter Name..."
+            />
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-2">
@@ -254,7 +281,7 @@ const StoryMenu: React.FC = () => {
                     {group.icon ? (
                       <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shrink-0">
                         <img
-                          src={getCharacterIconUrl(group.icon)}
+                          src={group.icon}
                           alt={group.title}
                           className="w-full h-full object-cover"
                         />

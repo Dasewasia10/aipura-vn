@@ -55,6 +55,11 @@ const VnScreen: React.FC = () => {
   const isSkip = useVnStore((s) => s.isSkip);
   const isAutoPlay = useVnStore((s) => s.isAutoPlay);
 
+  const parseText = (text?: string) => {
+    if (!text) return "";
+    return text.replace(/{user}/g, store.playerName);
+  };
+
   // --- AUDIO REFERENCES ---
   // Menyimpan instance pemutar audio agar bisa dimatikan/di-fade nanti
   const bgmRef = useRef<Howl | null>(null);
@@ -80,7 +85,7 @@ const VnScreen: React.FC = () => {
 
   // --- LOGIKA UTAMA (RENDER & EKSEKUSI BARIS) ---
   useEffect(() => {
-    if (!line) return;
+    if (!hasInteracted || !line) return;
     if (autoPlayTimer.current) clearTimeout(autoPlayTimer.current);
 
     if (line.type === "background" && line.src) {
@@ -173,18 +178,19 @@ const VnScreen: React.FC = () => {
         autoPlayTimer.current = setTimeout(() => store.nextDialog(), 100); // Kecepatan skip 100ms
       }
     }
-  }, [line, store.isAutoPlay, store.isSkip]);
+  }, [line, store.isAutoPlay, store.isSkip, hasInteracted]);
 
   // --- LOGIKA TYPEWRITER ---
   useEffect(() => {
-    // 1. Bersihkan mesin ketik lama jika masih ada yang menyala
+    if (!hasInteracted) return;
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
     }
 
     if (line?.type === "dialogue" && line.text) {
+      const processedText = parseText(line.text);
       if (store.isSkip) {
-        setDisplayedText(line.text);
+        setDisplayedText(processedText);
         setIsTyping(false);
         return;
       }
@@ -192,14 +198,11 @@ const VnScreen: React.FC = () => {
       setDisplayedText("");
       setIsTyping(true);
       let i = 0;
-      const text = line.text;
 
       typingIntervalRef.current = setInterval(() => {
         i++;
-        // 2. Gunakan substring (jauh lebih aman dari bug duplikasi huruf)
-        setDisplayedText(text.substring(0, i));
-
-        if (i >= text.length) {
+        setDisplayedText(processedText.substring(0, i));
+        if (i >= processedText.length) {
           if (typingIntervalRef.current)
             clearInterval(typingIntervalRef.current);
           setIsTyping(false);
@@ -211,10 +214,10 @@ const VnScreen: React.FC = () => {
         if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       };
     } else {
-      setDisplayedText(line?.text || "");
+      setDisplayedText(parseText(line?.text));
       setIsTyping(false);
     }
-  }, [line, store.isSkip, store.textSpeed]);
+  }, [line, store.isSkip, store.textSpeed, hasInteracted]);
 
   // --- HANDLE KLIK ---
   const handleScreenClick = () => {
@@ -236,7 +239,7 @@ const VnScreen: React.FC = () => {
 
     if (isTyping) {
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-      setDisplayedText(line?.text || "");
+      setDisplayedText(parseText(line?.text));
       setIsTyping(false);
       return;
     }
@@ -426,7 +429,7 @@ const VnScreen: React.FC = () => {
               <div className="absolute bottom-8 left-1/2 w-[90%] max-w-5xl -translate-x-1/2 z-30 pointer-events-auto">
                 {line.speakerName && (
                   <div className="absolute -top-10 left-4 inline-block bg-slate-800 px-6 py-1.5 text-lg font-bold text-white shadow-md border-b-2 border-cyan-500 rounded-t-lg">
-                    {line.speakerName}
+                    {parseText(line.speakerName)}
                   </div>
                 )}
                 <div className="min-h-35 w-full rounded-lg rounded-tl-none border border-white/20 bg-black/75 p-6 text-white backdrop-blur-md shadow-2xl relative">
@@ -471,7 +474,7 @@ const VnScreen: React.FC = () => {
                 }}
                 className="w-full rounded-xl border border-cyan-500/30 bg-slate-900/90 py-5 px-6 text-center text-xl text-white transition-all hover:scale-[1.02] hover:bg-cyan-900/80 hover:border-cyan-400 cursor-pointer"
               >
-                {choice.text}
+                {parseText(choice.text)}
               </button>
             ))}
           </div>
@@ -533,7 +536,7 @@ const VnScreen: React.FC = () => {
                             </p>
                           )}
                           <p className="text-gray-200 leading-relaxed">
-                            {log.text}
+                            {parseText(log.text)}
                           </p>
                         </div>
                       ))

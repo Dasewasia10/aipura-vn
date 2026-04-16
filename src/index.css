@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@plugin "tailwind-scrollbar";
+
+/* Pastikan body tidak bisa di-scroll agar VN terasa seperti game */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #000;
+}

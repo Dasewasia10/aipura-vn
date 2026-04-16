@@ -1,0 +1,158 @@
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { useVnStore, type ScriptLine } from "../store/useVnStore";
+import { BookOpen, Star, Loader2 } from "lucide-react";
+
+// --- DUMMY INDEX DATA ---
+const STORY_LIST = [
+  {
+    id: "ep1",
+    title: "Awal Mula Sang Idola",
+    type: "Main Story",
+    thumbnail: "https://apiip.dasewasia.my.id/background/bg_adv_01.jpg", // Ganti dengan URL gambarmu
+  },
+  {
+    id: "ep2",
+    title: "Pita yang Terlalu Ketat",
+    type: "Love Story",
+    thumbnail: "https://apiip.dasewasia.my.id/background/bg_adv_02.jpg",
+  },
+  {
+    id: "ep3",
+    title: "Rahasia di Ruang Latihan",
+    type: "Bond Story",
+    thumbnail: "https://apiip.dasewasia.my.id/background/bg_adv_03.jpg",
+  },
+];
+
+const SCRIPTS_DATABASE: Record<string, ScriptLine[]> = {
+  ep1: [
+    {
+      type: "background",
+      src: "https://apiip.dasewasia.my.id/storyBackground/env_adv_2d_ameapart-00-noon.webp",
+    },
+    {
+      type: "dialogue",
+      speakerName: "Mana",
+      speakerCode: "mna",
+      text: "Selamat datang di apartemen! Episode 1 dimulai dari sini.",
+    },
+    {
+      type: "dialogue",
+      speakerName: "Mana",
+      speakerCode: "mna",
+      text: "Lalu ini dialog kedua.",
+    },
+  ],
+  ep2: [
+    {
+      type: "background",
+      src: "https://apiip.dasewasia.my.id/storyBackground/env_adv_2d_ameapart-00-noon.webp",
+    },
+    {
+      type: "dialogue",
+      speakerName: "Haruko",
+      speakerCode: "hrk",
+      text: "Latihan hari ini akan sangat berat. Kamu siap, Manajer?",
+    },
+  ],
+  ep3: [
+    {
+      type: "background",
+      src: "https://apiip.dasewasia.my.id/storyBackground/env_adv_2d_ameapart-00-noon.webp",
+    },
+    {
+      type: "dialogue",
+      speakerName: "Haruko",
+      speakerCode: "hrk",
+      text: "Ini adalah Episode 3 di ruang latihan.",
+    },
+  ],
+};
+
+const StoryMenu: React.FC = () => {
+  const initStory = useVnStore((state) => state.initStory);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const handlePlayStory = (id: string) => {
+    setLoadingId(id);
+    setTimeout(() => {
+      const selectedScript = SCRIPTS_DATABASE[id] || SCRIPTS_DATABASE["ep1"];
+      initStory(selectedScript);
+      setLoadingId(null);
+    }, 800);
+  };
+
+  return (
+    <div className="relative flex h-full w-full flex-col bg-[#0a0a0f] p-8 text-white overflow-y-auto scrollbar-thin scrollbar-thumb-cyan-700">
+      {/* Header Menu */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-10 flex items-center justify-between border-b border-white/10 pb-6"
+      >
+        <div>
+          <h1 className="text-4xl font-bold tracking-wider text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500">
+            STORY SELECTION
+          </h1>
+          <p className="mt-2 text-gray-400">
+            Pilih cerita yang ingin kamu baca.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 rounded-full bg-cyan-900/30 px-5 py-2 text-cyan-400 border border-cyan-500/30">
+          <BookOpen size={20} />
+          <span className="font-semibold">Library</span>
+        </div>
+      </motion.div>
+
+      {/* Grid Kartu Cerita */}
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {STORY_LIST.map((story, index) => (
+          <motion.div
+            key={story.id}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.1 }}
+            onClick={() => {
+              if (!loadingId) handlePlayStory(story.id);
+            }}
+            className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-black shadow-xl transition-all hover:-translate-y-2 hover:border-cyan-400 hover:shadow-[0_10px_30px_rgba(34,211,238,0.3)]"
+          >
+            {/* Thumbnail Image */}
+            <div className="aspect-video w-full overflow-hidden">
+              <img
+                src={story.thumbnail}
+                alt={story.title}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+                onError={(e) =>
+                  (e.currentTarget.src =
+                    "https://apiip.dasewasia.my.id/storyBackground/env_adv_2d_ameapart-00-noon.webp")
+                } // Fallback gambar
+              />
+            </div>
+
+            {/* Konten Teks Bawah */}
+            <div className="absolute bottom-0 w-full bg-linear-to-t from-black via-black/80 to-transparent p-5 pt-12">
+              <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-cyan-400">
+                <Star size={14} />
+                {story.type}
+              </div>
+              <h2 className="text-2xl font-bold text-white drop-shadow-md group-hover:text-cyan-300 transition-colors">
+                {story.title}
+              </h2>
+            </div>
+
+            {/* Overlay Loading saat di-klik */}
+            {loadingId === story.id && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                <Loader2 className="animate-spin text-cyan-400" size={48} />
+              </div>
+            )}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default StoryMenu;

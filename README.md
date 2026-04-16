@@ -39,7 +39,7 @@ The engine categorizes stories into distinct albums/directories, dynamically fet
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/yourusername/polaris-vn-engine.git](https://github.com/yourusername/polaris-vn-engine.git)
+   git clone https://github.com/yourusername/polaris-vn-engine.git
    cd polaris-vn-engine
    ```
 
@@ -69,12 +69,12 @@ The engine reads an array of `ScriptLine` objects. Here is an example of how the
 [
   {
     "type": "background",
-    "src": "[https://apiip.dasewasia.my.id/storyBackground/env_room.webp](https://apiip.dasewasia.my.id/storyBackground/env_room.webp)"
+    "src": "https://apiip.dasewasia.my.id/storyBackground/env_room.webp"
   },
   {
     "type": "bgm",
     "action": "play",
-    "src": "[https://apiip.dasewasia.my.id/bgm/bgm_01.mp3](https://apiip.dasewasia.my.id/bgm/bgm_01.mp3)"
+    "src": "https://apiip.dasewasia.my.id/bgm/bgm_01.mp3"
   },
   {
     "type": "dialogue",

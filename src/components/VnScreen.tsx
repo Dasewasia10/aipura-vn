@@ -307,7 +307,7 @@ const VnScreen: React.FC = () => {
     )
       return null;
     const filename = SPRITE_MAP[lower] || lower;
-    return `${R2_DOMAIN}/spriteCharacter/sprite-${filename}-01.png`;
+    return `${R2_DOMAIN}/spriteCharacter/sprite-${filename}-01.webp`;
   };
 
   const getSpriteStyle = (code?: string | null) => {

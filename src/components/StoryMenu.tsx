@@ -156,8 +156,7 @@ const StoryMenu: React.FC = () => {
 
     try {
       // Penyesuaian: Card Story pakai id.json, yang lain pakai fileName
-      const targetFileName =
-        activeCategory === "card" ? `${story.id}.json` : story.fileName;
+      const targetFileName = story.fileName;
       const res = await axios.get(
         `${API_BASE}/${cat.path}/stories/${targetFileName}`,
       );

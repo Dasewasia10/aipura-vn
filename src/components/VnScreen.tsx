@@ -9,6 +9,7 @@ import {
   X,
   Home,
   PlayCircle,
+  Globe,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -55,9 +56,25 @@ const VnScreen: React.FC = () => {
   const isSkip = useVnStore((s) => s.isSkip);
   const isAutoPlay = useVnStore((s) => s.isAutoPlay);
 
-  const parseText = (text?: string) => {
-    if (!text) return "";
-    return text.replace(/{user}/g, store.playerName);
+  const language = useVnStore((s) => s.language);
+  const setLanguage = useVnStore((s) => s.setLanguage);
+
+  const parseText = (textData?: any) => {
+    if (!textData) return "";
+
+    let resultText = "";
+
+    // Jika data masih berformat String (File JSON lama)
+    if (typeof textData === "string") {
+      resultText = textData;
+    }
+    // Jika data sudah berformat Object Multi-bahasa (File JSON baru)
+    else if (typeof textData === "object") {
+      // Prioritas: Bahasa terpilih -> Fallback ke EN -> Fallback ke JP
+      resultText = textData[language] || textData["en"] || textData["jp"] || "";
+    }
+
+    return resultText.replace(/{user}/g, store.playerName);
   };
 
   // --- AUDIO REFERENCES ---
@@ -187,7 +204,10 @@ const VnScreen: React.FC = () => {
       clearInterval(typingIntervalRef.current);
     }
 
-    if (line?.type === "dialogue" && line.text) {
+    if (
+      line?.type === "dialogue" &&
+      (typeof line.text === "string" || typeof line.text === "object")
+    ) {
       const processedText = parseText(line.text);
       if (store.isSkip) {
         setDisplayedText(processedText);
@@ -389,6 +409,29 @@ const VnScreen: React.FC = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
+                  onClick={() => {
+                    // Logika siklus bahasa: jp -> en -> id -> jp
+                    const nextLang =
+                      language === "jp"
+                        ? "en"
+                        : language === "en"
+                          ? "id"
+                          : "jp";
+                    setLanguage(nextLang);
+                  }}
+                  className="relative p-2 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition group ml-1"
+                  title="Change Language"
+                >
+                  <Globe size={20} />
+                  {/* Indikator Teks Bahasa Kecil */}
+                  <span className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-bold uppercase tracking-widest text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {language}
+                  </span>
+                </button>
+
+                <div className="w-px h-6 bg-white/20 my-auto"></div>
+
+                <button
                   onClick={() => store.setShowLog(true)}
                   className="cursor-pointer p-2 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition"
                 >
@@ -412,8 +455,9 @@ const VnScreen: React.FC = () => {
                 >
                   <EyeOff size={20} />
                 </button>
-                <div className="w-px h-8 bg-white/20 my-auto"></div>{" "}
-                {/* Garis pemisah */}
+
+                <div className="w-px h-8 bg-white/20 my-auto"></div>
+
                 <button
                   onClick={() => setShowExitConfirm(true)}
                   className="cursor-pointer p-2 rounded-full text-red-400 hover:text-white hover:bg-red-500/50 transition mr-1"
@@ -532,7 +576,7 @@ const VnScreen: React.FC = () => {
                         >
                           {log.speakerName && (
                             <p className="text-cyan-300 font-bold mb-1 text-sm">
-                              {log.speakerName}
+                              {parseText(log.speakerName)}
                             </p>
                           )}
                           <p className="text-gray-200 leading-relaxed">

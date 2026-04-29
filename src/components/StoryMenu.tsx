@@ -63,12 +63,36 @@ const CATEGORIES = [
 ];
 
 const CHARA_CODE_MAP: Record<string, string> = {
-  rio: "rio", aoi: "aoi", ai: "ai", kkr: "kokoro", rui: "rui", yu: "yu",
-  smr: "sumire", mna: "mana", ktn: "kotono", skr: "path-01", rei: "rei",
-  ngs: "nagisa", hrk: "haruko", ski: "saki", suz: "suzu", mei: "mei",
-  szk: "shizuku", chs: "chisa", chk: "chika", cca: "cocoa", chn: "chino",
-  mhk: "miho", kan: "kana", kor: "fran", mana: "mana", saegusa: "saegusa",
-  asakura: "asakura", koh: "kohei", kohei: "kohei", stm: "satomi",
+  rio: "rio",
+  aoi: "aoi",
+  ai: "ai",
+  kkr: "kokoro",
+  rui: "rui",
+  yu: "yu",
+  smr: "sumire",
+  mna: "mana",
+  ktn: "kotono",
+  skr: "sakura",
+  rei: "rei",
+  ngs: "nagisa",
+  hrk: "haruko",
+  ski: "saki",
+  suz: "suzu",
+  mei: "mei",
+  szk: "shizuku",
+  chs: "chisa",
+  chk: "chika",
+  cca: "cocoa",
+  chn: "chino",
+  mhk: "miho",
+  kan: "kana",
+  kor: "fran",
+  mana: "mana",
+  saegusa: "saegusa",
+  asakura: "asakura",
+  koh: "kohei",
+  kohei: "kohei",
+  stm: "satomi",
 };
 
 interface NormalizedGroup {
@@ -81,14 +105,14 @@ interface NormalizedGroup {
 const getCharacterIconUrl = (code: string) => {
   if (!code) return null;
   const lower = code.toLowerCase();
-  
+
   // Ambil mapping nama file dari kode
   let assetName = CHARA_CODE_MAP[lower] || lower;
 
   if (assetName === "snow") {
     assetName = "smiku";
   }
-  
+
   return `https://apiip.dasewasia.my.id/iconCharacter/chara-${assetName}.png`;
 };
 
@@ -195,7 +219,9 @@ const StoryMenu: React.FC = () => {
             <input
               type="text"
               value={useVnStore((s) => s.playerName)}
-              onChange={(e) => useVnStore.getState().setPlayerName(e.target.value)}
+              onChange={(e) =>
+                useVnStore.getState().setPlayerName(e.target.value)
+              }
               className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-cyan-100 focus:outline-none focus:border-cyan-500/50 transition-colors"
               placeholder="Enter Name..."
             />

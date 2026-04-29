@@ -95,6 +95,8 @@ const VnScreen: React.FC = () => {
 
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const currentLineRef = useRef<any>(null);
+  const isLineRevealedRef = useRef(false);
 
   const [hasInteracted, setHasInteracted] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -212,14 +214,23 @@ const VnScreen: React.FC = () => {
       clearInterval(typingIntervalRef.current);
     }
 
+    // Jika objek baris benar-benar berganti (maju ke baris baru), reset pelacaknya
+    if (currentLineRef.current !== line) {
+      currentLineRef.current = line;
+      isLineRevealedRef.current = false;
+    }
+
     if (
       line?.type === "dialogue" &&
       (typeof line.text === "string" || typeof line.text === "object")
     ) {
-      const processedText = getLocalizedText(line.text);
-      if (store.isSkip) {
+      const processedText = getLocalizedText(line);
+
+      // Jika user menekan skip ATAU baris ini sudah selesai diketik sebelumnya (sebelum ganti bahasa)
+      if (store.isSkip || isLineRevealedRef.current) {
         setDisplayedText(processedText);
         setIsTyping(false);
+        isLineRevealedRef.current = true;
         return;
       }
 
@@ -234,18 +245,19 @@ const VnScreen: React.FC = () => {
           if (typingIntervalRef.current)
             clearInterval(typingIntervalRef.current);
           setIsTyping(false);
+          isLineRevealedRef.current = true; // Tandai sudah selesai ngetik
         }
       }, store.textSpeed || 30);
 
-      // 3. Cleanup saat komponen atau baris berganti
       return () => {
         if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       };
     } else {
-      setDisplayedText(getLocalizedText(line?.text));
+      setDisplayedText(getLocalizedText(line));
       setIsTyping(false);
+      isLineRevealedRef.current = true;
     }
-  }, [line, store.isSkip, store.textSpeed, hasInteracted]);
+  }, [line, store.isSkip, store.textSpeed, hasInteracted, language]); // <-- PENTING: language ditambahkan di sini
 
   // --- HANDLE KLIK ---
   const handleScreenClick = () => {
@@ -267,14 +279,15 @@ const VnScreen: React.FC = () => {
 
     if (isTyping) {
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-      setDisplayedText(getLocalizedText(line)); // PERUBAHAN DI SINI
+      setDisplayedText(getLocalizedText(line));
       setIsTyping(false);
+      isLineRevealedRef.current = true; // <-- TAMBAHAN: Tandai bahwa teks sudah ditampilkan penuh secara paksa
       return;
     }
 
     // Panggil nextDialog
     if (line?.type !== "choice_selection") {
-      console.log("Advancing to next line..."); // Untuk memantau di console
+      console.log("Advancing to next line...");
       store.nextDialog();
     }
   };

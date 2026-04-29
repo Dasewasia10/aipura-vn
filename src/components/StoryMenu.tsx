@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { useVnStore } from "../store/useVnStore";
+import SearchBar from "./SearchBar"; // <-- Sesuaikan path import ini jika berbeda
 import {
   BookOpen,
   Calendar,
@@ -88,8 +89,8 @@ const CHARA_CODE_MAP: Record<string, string> = {
   kan: "kana",
   kor: "fran",
   mana: "mana",
-  saegusa: "saegusa",
-  asakura: "asakura",
+  shj: "saegusa",
+  kyi: "asakura",
   koh: "kohei",
   kohei: "kohei",
   stm: "satomi",
@@ -106,9 +107,7 @@ const getCharacterIconUrl = (code: string) => {
   if (!code) return null;
   const lower = code.toLowerCase();
 
-  // Ambil mapping nama file dari kode
   let assetName = CHARA_CODE_MAP[lower] || lower;
-
   if (assetName === "snow") {
     assetName = "smiku";
   }
@@ -122,6 +121,14 @@ const StoryMenu: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStoryId, setLoadingStoryId] = useState<string | null>(null);
 
+  // --- STATE SEARCH ---
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Bersihkan search bar ketika user ganti kategori (misal dari Card ke Event)
+  useEffect(() => {
+    setSearchQuery("");
+  }, [activeCategory]);
+
   useEffect(() => {
     const fetchIndex = async () => {
       setIsLoading(true);
@@ -133,20 +140,21 @@ const StoryMenu: React.FC = () => {
 
         const normalizedData: NormalizedGroup[] = res.data.map((group: any) => {
           const groupTitle = group.title || group.name || "Unknown Group";
-
-          // Ambil item cerita
           let rawItems =
             group.episodes || group.stories || group.messages || [];
 
-          // FILTER: Hilangkan versi (Short) untuk Card Story
           if (activeCategory === "card") {
             rawItems = rawItems.filter((item: any) => {
-              const itemTitle = (item.title || item.name || "").toLowerCase();
+              const itemTitle = (
+                item.title ||
+                item.name ||
+                CHARA_CODE_MAP[item.uniqueId] ||
+                ""
+              ).toLowerCase();
               return !itemTitle.includes("(short)");
             });
           }
 
-          // ICON: Gunakan fungsi ikon karakter untuk Bond Story
           let groupIcon = group.groupIcon || null;
           if (activeCategory === "bond") {
             groupIcon = getCharacterIconUrl(group.id);
@@ -172,14 +180,12 @@ const StoryMenu: React.FC = () => {
     fetchIndex();
   }, [activeCategory]);
 
-  // 2. Mainkan Story & Update URL
   const handlePlayStory = async (story: any) => {
     setLoadingStoryId(story.id);
     const cat = CATEGORIES.find((c) => c.id === activeCategory);
     if (!cat) return;
 
     try {
-      // Penyesuaian: Card Story pakai id.json, yang lain pakai fileName
       const targetFileName = story.fileName;
       const res = await axios.get(
         `${API_BASE}/${cat.path}/stories/${targetFileName}`,
@@ -199,10 +205,55 @@ const StoryMenu: React.FC = () => {
     }
   };
 
+  // --- LOGIKA FILTER SEARCH ---
+  const filteredGroups = groups
+    .map((group) => {
+      if (!searchQuery) return group; // Jika kosong, tampilkan semua
+
+      const query = searchQuery.toLowerCase();
+
+      // FUNGSI PINTAR: Mengekstrak ID ("card_kkr_01") menjadi array ["card", "kkr", "01"]
+      // lalu mengubah "kkr" menjadi "kokoro" berdasarkan CHARA_CODE_MAP
+      const extractCharaNames = (idString: string) => {
+        const parts = idString.toLowerCase().split(/[_|-]/);
+        return parts.map((p) => CHARA_CODE_MAP[p] || "").join(" ");
+      };
+
+      // Ekstrak nama karakter dari ID grup dan ID item
+      const groupExpandedName = extractCharaNames(group.id);
+
+      // Gabungkan Judul + ID + Nama Karakter (Mapping) menjadi satu string pencarian
+      const groupSearchText =
+        `${group.title} ${group.id} ${groupExpandedName}`.toLowerCase();
+      const groupMatches = groupSearchText.includes(query);
+
+      // Lakukan hal yang sama untuk episode-episode di dalamnya
+      const matchingItems = group.items.filter((item) => {
+        const itemExpandedName = extractCharaNames(item.id || "");
+        const itemSearchText =
+          `${item.title || item.name || ""} ${item.id || ""} ${itemExpandedName}`.toLowerCase();
+
+        return itemSearchText.includes(query);
+      });
+
+      // Tampilkan grup JIKA grupnya cocok ATAU ada episodenya yang cocok
+      if (groupMatches || matchingItems.length > 0) {
+        return {
+          ...group,
+          // Jika yang dicari adalah nama Grupnya, tampilkan semua episodenya.
+          // Tapi jika yang dicari judul Episodenya, tampilkan episode yang cocok saja.
+          items: groupMatches ? group.items : matchingItems,
+        };
+      }
+
+      return null; // Sembunyikan grup yang sama sekali tidak cocok
+    })
+    .filter(Boolean) as NormalizedGroup[];
+
   return (
     <div className="flex h-full w-full bg-[#0a0a0f] text-white">
       {/* --- SIDEBAR --- */}
-      <div className="w-64 border-r border-white/10 bg-[#0d1117]/95 backdrop-blur-xl z-10 flex flex-col shadow-2xl">
+      <div className="w-64 border-r border-white/10 bg-[#0d1117]/95 backdrop-blur-xl z-10 flex flex-col shadow-2xl shrink-0">
         <div className="p-8 pb-6 border-b border-white/5">
           <h1 className="text-2xl font-black italic tracking-widest text-transparent bg-clip-text bg-linear-to-r from-cyan-400 to-blue-500 drop-shadow-sm">
             POLARIS VN
@@ -211,7 +262,6 @@ const StoryMenu: React.FC = () => {
             Story Archive
           </p>
 
-          {/* INPUT NAMA MANAGER */}
           <div className="mt-6">
             <label className="text-[10px] font-bold text-cyan-500/60 uppercase tracking-widest block mb-2">
               Manager Name
@@ -265,7 +315,7 @@ const StoryMenu: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
-        <div className="px-10 py-8 border-b border-white/5 bg-black/20 backdrop-blur-sm z-10 flex justify-between items-end">
+        <div className="px-6 md:px-10 py-6 md:py-8 border-b border-white/5 bg-black/20 backdrop-blur-sm z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 shrink-0">
           <div>
             <span className="text-[10px] text-cyan-400 font-bold tracking-[0.2em] uppercase block mb-1">
               Select Directory
@@ -274,12 +324,17 @@ const StoryMenu: React.FC = () => {
               {CATEGORIES.find((c) => c.id === activeCategory)?.label}
             </h2>
           </div>
-          <div className="text-cyan-400 font-mono text-sm tracking-widest opacity-50">
-            {groups.length} DIRECTORIES
+
+          {/* SEARCH BAR CONTAINER */}
+          <div className="flex flex-col items-end gap-2 w-full md:w-md">
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            <div className="text-cyan-400 font-mono text-xs tracking-widest opacity-50 mt-1">
+              {filteredGroups.length} DIRECTORIES MATCHED
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-10 scrollbar-thin scrollbar-thumb-cyan-700/50 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-thin scrollbar-thumb-cyan-700/50 scrollbar-track-transparent">
           {isLoading ? (
             <div className="flex flex-col h-full items-center justify-center gap-4 text-cyan-400">
               <Loader2 className="animate-spin" size={48} />
@@ -287,18 +342,18 @@ const StoryMenu: React.FC = () => {
                 Fetching Data...
               </span>
             </div>
-          ) : groups.length === 0 ? (
+          ) : filteredGroups.length === 0 ? (
             <div className="flex h-full items-center justify-center text-gray-500 font-bold tracking-widest uppercase">
-              NO DATA FOUND
+              NO DIRECTORY FOUND
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-              {groups.map((group, idx) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 pb-10">
+              {filteredGroups.map((group, idx) => (
                 <motion.div
                   key={group.id + idx}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
+                  transition={{ delay: (idx % 10) * 0.05 }}
                   className="flex flex-col h-95 bg-[#161b22] border border-white/10 rounded-xl overflow-hidden shadow-lg transition-colors hover:border-cyan-500/50"
                 >
                   {/* GROUP HEADER */}

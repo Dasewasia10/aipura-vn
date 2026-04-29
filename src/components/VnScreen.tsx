@@ -59,22 +59,30 @@ const VnScreen: React.FC = () => {
   const language = useVnStore((s) => s.language);
   const setLanguage = useVnStore((s) => s.setLanguage);
 
-  const parseText = (textData?: any) => {
-    if (!textData) return "";
+  const getLocalizedText = (item?: any) => {
+    if (!item) return "";
+    let rawText = item.text || "";
 
-    let resultText = "";
-
-    // Jika data masih berformat String (File JSON lama)
-    if (typeof textData === "string") {
-      resultText = textData;
-    }
-    // Jika data sudah berformat Object Multi-bahasa (File JSON baru)
-    else if (typeof textData === "object") {
-      // Prioritas: Bahasa terpilih -> Fallback ke EN -> Fallback ke JP
-      resultText = textData[language] || textData["en"] || textData["jp"] || "";
+    if (language === "en" && item.translations?.en) {
+      rawText = item.translations.en;
+    } else if (language === "id") {
+      // Jika ID tidak ada, fallback ke EN, lalu fallback ke JP (text)
+      rawText =
+        item.translations?.id || item.translations?.en || item.text || "";
     }
 
-    return resultText.replace(/{user}/g, store.playerName);
+    return rawText.replace(/{user}/gi, store.playerName);
+  };
+
+  const getLocalizedName = (item?: any) => {
+    if (!item) return "";
+    let rawName = item.speakerName || "";
+
+    if ((language === "en" || language === "id") && item.speakerNameEn) {
+      rawName = item.speakerNameEn;
+    }
+
+    return rawName.replace(/{user}/gi, store.playerName);
   };
 
   // --- AUDIO REFERENCES ---
@@ -208,7 +216,7 @@ const VnScreen: React.FC = () => {
       line?.type === "dialogue" &&
       (typeof line.text === "string" || typeof line.text === "object")
     ) {
-      const processedText = parseText(line.text);
+      const processedText = getLocalizedText(line.text);
       if (store.isSkip) {
         setDisplayedText(processedText);
         setIsTyping(false);
@@ -234,7 +242,7 @@ const VnScreen: React.FC = () => {
         if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
       };
     } else {
-      setDisplayedText(parseText(line?.text));
+      setDisplayedText(getLocalizedText(line?.text));
       setIsTyping(false);
     }
   }, [line, store.isSkip, store.textSpeed, hasInteracted]);
@@ -259,7 +267,7 @@ const VnScreen: React.FC = () => {
 
     if (isTyping) {
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-      setDisplayedText(parseText(line?.text));
+      setDisplayedText(getLocalizedText(line)); // PERUBAHAN DI SINI
       setIsTyping(false);
       return;
     }
@@ -471,9 +479,10 @@ const VnScreen: React.FC = () => {
             {/* KOTAK DIALOG */}
             {line.type === "dialogue" && (
               <div className="absolute bottom-8 left-1/2 w-[90%] max-w-5xl -translate-x-1/2 z-30 pointer-events-auto">
+                {/* KOTAK DIALOG */}
                 {line.speakerName && (
                   <div className="absolute -top-10 left-4 inline-block bg-slate-800 px-6 py-1.5 text-lg font-bold text-white shadow-md border-b-2 border-cyan-500 rounded-t-lg">
-                    {parseText(line.speakerName)}
+                    {getLocalizedName(line)}
                   </div>
                 )}
                 <div className="min-h-35 w-full rounded-lg rounded-tl-none border border-white/20 bg-black/75 p-6 text-white backdrop-blur-md shadow-2xl relative">
@@ -518,7 +527,7 @@ const VnScreen: React.FC = () => {
                 }}
                 className="w-full rounded-xl border border-cyan-500/30 bg-slate-900/90 py-5 px-6 text-center text-xl text-white transition-all hover:scale-[1.02] hover:bg-cyan-900/80 hover:border-cyan-400 cursor-pointer"
               >
-                {parseText(choice.text)}
+                {getLocalizedText(choice)}
               </button>
             ))}
           </div>
@@ -576,11 +585,11 @@ const VnScreen: React.FC = () => {
                         >
                           {log.speakerName && (
                             <p className="text-cyan-300 font-bold mb-1 text-sm">
-                              {parseText(log.speakerName)}
+                              {getLocalizedName(log)}
                             </p>
                           )}
-                          <p className="text-gray-200 leading-relaxed">
-                            {parseText(log.text)}
+                          <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                            {getLocalizedText(log)}
                           </p>
                         </div>
                       ))

@@ -1,10 +1,11 @@
 import { create } from "zustand";
 
-// --- TYPES (Tetap sama seperti sebelumnya) ---
+// --- TYPES ---
 export interface ChoiceOption {
   text: string;
   route: ScriptLine[];
 }
+
 export interface ScriptLine {
   type:
     | "dialogue"
@@ -16,8 +17,14 @@ export interface ScriptLine {
     | "anchor";
   speakerCode?: string | null;
   speakerName?: string;
+  speakerNameEn?: string; // TAMBAHAN: Nama bahasa Inggris
   iconUrl?: string | null;
   text?: string;
+  translations?: {
+    // TAMBAHAN: Objek terjemahan
+    en?: string;
+    id?: string;
+  };
   voiceUrl?: string | null;
   src?: string;
   action?: "play" | "stop";
@@ -25,7 +32,8 @@ export interface ScriptLine {
   nextLabel?: string;
   labelName?: string;
   startTime?: number;
-  sfxList?: { src: string; delay: number }[];
+  endTime?: number;
+  sfxList?: { src: string; delay: number; startTime?: number }[];
 }
 
 export interface StackFrame {
@@ -33,11 +41,15 @@ export interface StackFrame {
   currentIndex: number;
 }
 
-// Tipe baru untuk History Log
 export interface LogEntry {
   speakerName?: string;
+  speakerNameEn?: string; // TAMBAHAN
   text?: string;
-  voiceUrl?: string | null;
+  translations?: {
+    // TAMBAHAN
+    en?: string;
+    id?: string;
+  };
 }
 
 interface VnState {
@@ -115,22 +127,22 @@ export const useVnStore = create<VnState>((set, get) => ({
   },
 
   nextDialog: () => {
-    // Gunakan fungsi callback 'set' untuk akurasi state
     set((state) => {
       const { executionStack, logHistory, isStoryFinished } = state;
 
-      // Jika cerita sudah tamat atau stack kosong, jangan lakukan apa-apa
       if (executionStack.length === 0 || isStoryFinished) return state;
 
       const topFrame = executionStack[executionStack.length - 1];
       const currentLine = topFrame.script[topFrame.currentIndex];
 
-      // 1. Simpan Log (Gunakan array baru)
+      // 1. Simpan Log dengan Data Lokalisasi Penuh
       let newLogHistory = [...logHistory];
       if (currentLine?.type === "dialogue" && currentLine.text) {
         newLogHistory.push({
           speakerName: currentLine.speakerName,
+          speakerNameEn: currentLine.speakerNameEn,
           text: currentLine.text,
+          translations: currentLine.translations,
         });
       }
 

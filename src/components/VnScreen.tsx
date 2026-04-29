@@ -553,7 +553,12 @@ const VnScreen: React.FC = () => {
           (() => {
             const activeLog =
               line?.type === "dialogue" && line.text
-                ? { speakerName: line.speakerName, text: line.text }
+                ? {
+                    speakerName: line.speakerName,
+                    speakerNameEn: line.speakerNameEn, // Tambahkan ini
+                    text: line.text,
+                    translations: line.translations, // Tambahkan ini
+                  }
                 : null;
             const displayLogs = activeLog
               ? [...store.logHistory, activeLog]

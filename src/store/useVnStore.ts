@@ -50,6 +50,7 @@ export interface LogEntry {
     en?: string;
     id?: string;
   };
+  voiceUrl?: string | null;
 }
 
 interface VnState {
@@ -143,6 +144,7 @@ export const useVnStore = create<VnState>((set, get) => ({
           speakerNameEn: currentLine.speakerNameEn,
           text: currentLine.text,
           translations: currentLine.translations,
+          voiceUrl: currentLine.voiceUrl,
         });
       }
 

@@ -10,6 +10,9 @@ import {
   Home,
   PlayCircle,
   Globe,
+  Volume,
+  Volume1,
+  Volume2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -84,6 +87,55 @@ const VnScreen: React.FC = () => {
 
     return rawName.replace(/{user}/gi, store.playerName);
   };
+
+  // --- STATE UNTUK VOICE LOG ---
+  const [playingLogVoice, setPlayingLogVoice] = useState<string | null>(null);
+  const [volFrame, setVolFrame] = useState(2); // Frame animasi: 0, 1, 2
+
+  // --- FUNGSI PLAY VOICE DARI LOG ---
+  const playLogVoice = (e: React.MouseEvent, url: string) => {
+    e.stopPropagation(); // Mencegah klik tembus
+
+    // 1. Bersihkan audio lama dengan aman
+    if (voiceRef.current) {
+      // CABUT event listener lama agar tidak mengganggu state audio yang baru
+      voiceRef.current.off("end");
+      voiceRef.current.off("stop");
+      voiceRef.current.stop();
+    }
+
+    // 2. Set suara yang sedang aktif dan paksa frame ke 0 agar langsung gerak
+    setPlayingLogVoice(url);
+    setVolFrame(0);
+
+    // 3. Putar suara baru
+    voiceRef.current = new Howl({
+      src: [url],
+      volume: 1,
+      // Gunakan fungsi callback dengan pengecekan state agar lebih aman
+      onend: () => {
+        setPlayingLogVoice((prev) => (prev === url ? null : prev));
+      },
+      onstop: () => {
+        setPlayingLogVoice((prev) => (prev === url ? null : prev));
+      },
+    });
+
+    voiceRef.current.play();
+  };
+
+  // Effect untuk menjalankan animasi gelombang suara
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (playingLogVoice) {
+      interval = setInterval(() => {
+        setVolFrame((prev) => (prev + 1) % 3); // Berputar dari 0 -> 1 -> 2
+      }, 300); // Kecepatan gerak gelombang (300ms)
+    } else {
+      setVolFrame(2); // Kembali ke icon Volume2 statis jika tidak ada yang play
+    }
+    return () => clearInterval(interval);
+  }, [playingLogVoice]);
 
   // --- AUDIO REFERENCES ---
   // Menyimpan instance pemutar audio agar bisa dimatikan/di-fade nanti
@@ -555,9 +607,10 @@ const VnScreen: React.FC = () => {
               line?.type === "dialogue" && line.text
                 ? {
                     speakerName: line.speakerName,
-                    speakerNameEn: line.speakerNameEn, // Tambahkan ini
+                    speakerNameEn: line.speakerNameEn,
                     text: line.text,
-                    translations: line.translations, // Tambahkan ini
+                    translations: line.translations,
+                    voiceUrl: line.voiceUrl, // <-- TAMBAHKAN INI
                   }
                 : null;
             const displayLogs = activeLog
@@ -599,16 +652,44 @@ const VnScreen: React.FC = () => {
                       displayLogs.map((log, i) => (
                         <div
                           key={i}
-                          className="border-b border-white/5 pb-4 last:border-0"
+                          className="border-b border-white/5 pb-4 last:border-0 flex justify-between"
                         >
-                          {log.speakerName && (
-                            <p className="text-cyan-300 font-bold mb-1 text-sm">
-                              {getLocalizedName(log)}
+                          <div>
+                            {log.speakerName && (
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-cyan-300 font-bold text-sm">
+                                  {getLocalizedName(log)}
+                                </p>
+                              </div>
+                            )}
+                            <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+                              {getLocalizedText(log)}
                             </p>
+                          </div>
+
+                          {/* TOMBOL PLAY VOICE */}
+                          {log.voiceUrl && (
+                            <button
+                              onClick={(e) => playLogVoice(e, log.voiceUrl!)}
+                              className={`transition-colors cursor-pointer border rounded-full h-fit p-3 ${
+                                playingLogVoice === log.voiceUrl
+                                  ? "bg-cyan-600 text-white border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                                  : "text-cyan-600 border-cyan-600/30 hover:text-cyan-300 hover:bg-cyan-800"
+                              }`}
+                              title="Play Voice"
+                            >
+                              {/* Logika Animasi Icon */}
+                              {playingLogVoice === log.voiceUrl ? (
+                                <>
+                                  {volFrame === 0 && <Volume size={24} />}
+                                  {volFrame === 1 && <Volume1 size={24} />}
+                                  {volFrame === 2 && <Volume2 size={24} />}
+                                </>
+                              ) : (
+                                <Volume2 size={24} />
+                              )}
+                            </button>
                           )}
-                          <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
-                            {getLocalizedText(log)}
-                          </p>
                         </div>
                       ))
                     )}
